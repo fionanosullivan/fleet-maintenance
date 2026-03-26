@@ -1,0 +1,11 @@
+# Node dependencies (if you ever add npm)
+node_modules/
+
+# Build output (if you ever add a build step)
+dist/
+build/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/

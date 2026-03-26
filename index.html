@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- SECTION: Head -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fleet Maintenance Platform</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app-shell gradient-mesh">
+      <!-- SECTION: Header -->
+      <header class="app-header">
+        <div class="app-brand">
+          <div class="brand-mark">FM</div>
+          <div class="brand-copy">
+            <h1 class="app-title">Fleet Maintenance Console</h1>
+            <p class="app-subtitle">Control room for trucks, trailers & work orders</p>
+          </div>
+        </div>
+        <div class="header-meta">
+          <div class="meta-pill meta-pill--primary">Live • Demo Data Only</div>
+          <div class="header-actions">
+            <button class="btn btn-ghost" id="resetDemoBtn">Reset Demo</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- SECTION: Main Layout -->
+      <main class="app-main">
+        <!-- SECTION: Sidebar Navigation -->
+        <nav class="sidebar" aria-label="Primary">
+          <button class="nav-item is-active" data-panel="fleetPanel">
+            <span class="nav-label">Fleet</span>
+            <span class="nav-meta" id="fleetCountMeta">0 units</span>
+          </button>
+          <button class="nav-item" data-panel="workOrdersPanel">
+            <span class="nav-label">Work Orders</span>
+            <span class="nav-meta" id="openWoMeta">0 open</span>
+          </button>
+          <button class="nav-item" data-panel="mileagePanel">
+            <span class="nav-label">Mileage</span>
+            <span class="nav-meta">Odometer</span>
+          </button>
+          <button class="nav-item" data-panel="templatesPanel">
+            <span class="nav-label">Service Templates</span>
+            <span class="nav-meta" id="templateMeta">0 templates</span>
+          </button>
+        </nav>
+
+        <!-- SECTION: Content Panels -->
+        <section class="content">
+          <!-- PANEL: Fleet -->
+          <section
+            id="fleetPanel"
+            class="panel is-active"
+            aria-labelledby="fleetHeading"
+          >
+            <header class="panel-header">
+              <div>
+                <h2 id="fleetHeading">Fleet</h2>
+                <p class="panel-subtitle">
+                  Manage trucks & trailers, assign identifiers, and track current mileage.
+                </p>
+              </div>
+              <div class="panel-actions">
+                <button class="btn btn-primary" id="addVehicleBtn">Add Unit</button>
+              </div>
+            </header>
+
+            <div class="panel-body">
+              <div class="filters-row">
+                <div class="field-group">
+                  <label for="fleetSearch" class="field-label">Search fleet</label>
+                  <input
+                    id="fleetSearch"
+                    type="search"
+                    class="input"
+                    placeholder="Search by unit, plate, VIN, or notes"
+                  />
+                </div>
+                <div class="field-group">
+                  <label for="fleetTypeFilter" class="field-label">Filter</label>
+                  <select id="fleetTypeFilter" class="input input-select">
+                    <option value="all">All units</option>
+                    <option value="truck">Trucks</option>
+                    <option value="trailer">Trailers</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="card-table" aria-live="polite">
+                <div class="table-head">
+                  <span>Unit</span>
+                  <span>Type</span>
+                  <span>Plate</span>
+                  <span>VIN</span>
+                  <span>Mileage</span>
+                  <span>Next Service</span>
+                  <span class="column-actions">Actions</span>
+                </div>
+                <div id="fleetList" class="table-body"><!-- Populated by JS --></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- PANEL: Work Orders -->
+          <section
+            id="workOrdersPanel"
+            class="panel"
+            aria-labelledby="workOrdersHeading"
+          >
+            <header class="panel-header">
+              <div>
+                <h2 id="workOrdersHeading">Work Orders</h2>
+                <p class="panel-subtitle">
+                  Create, review, and close mechanical work with full cost breakdown.
+                </p>
+              </div>
+              <div class="panel-actions">
+                <button class="btn btn-primary" id="addWorkOrderBtn">New Work Order</button>
+              </div>
+            </header>
+
+            <div class="panel-body panel-split">
+              <div class="panel-column panel-column--list">
+                <div class="filters-row">
+                  <div class="field-group">
+                    <label for="woStatusFilter" class="field-label">Status</label>
+                    <select id="woStatusFilter" class="input input-select">
+                      <option value="all">All</option>
+                      <option value="open">Open</option>
+                      <option value="in-progress">In progress</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div id="workOrderList" class="wo-list" aria-live="polite">
+                  <!-- JS populated cards -->
+                </div>
+              </div>
+
+              <aside class="panel-column panel-column--detail" aria-label="Work order detail">
+                <div id="workOrderEmptyState" class="empty-state">
+                  <h3>Select a work order</h3>
+                  <p>
+                    Choose a record from the left to see line items, service templates, and
+                    cost breakdown.
+                  </p>
+                </div>
+
+                <div id="workOrderDetail" class="wo-detail hidden">
+                  <header class="wo-header">
+                    <div>
+                      <h3 id="woDetailTitle">WO-0001 · Service</h3>
+                      <p id="woDetailMeta" class="wo-meta">Unit · Date · Status</p>
+                    </div>
+                    <div class="wo-header-actions">
+                      <button class="btn btn-ghost" id="woDuplicateBtn">Duplicate</button>
+                      <button class="btn btn-outline" id="woCloseBtn">Close Work Order</button>
+                    </div>
+                  </header>
+
+                  <section class="wo-section">
+                    <h4>Summary</h4>
+                    <div class="wo-summary-grid">
+                      <div>
+                        <span class="summary-label">Unit</span>
+                        <span id="woDetailUnit" class="summary-value">-</span>
+                      </div>
+                      <div>
+                        <span class="summary-label">Opened</span>
+                        <span id="woDetailOpened" class="summary-value">-</span>
+                      </div>
+                      <div>
+                        <span class="summary-label">Mileage</span>
+                        <span id="woDetailMileage" class="summary-value">-</span>
+                      </div>
+                      <div>
+                        <span class="summary-label">Status</span>
+                        <span id="woDetailStatus" class="status-pill">-</span>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section class="wo-section">
+                    <div class="wo-section-header">
+                      <h4>Line Items</h4>
+                      <button class="btn btn-ghost-sm" id="addLineItemBtn">Add line</button>
+                    </div>
+                    <div class="line-items">
+                      <div class="line-items-head">
+                        <span>Type</span>
+                        <span>Description</span>
+                        <span>Qty/Hrs</span>
+                        <span>Rate</span>
+                        <span>Total</span>
+                        <span></span>
+                      </div>
+                      <div id="lineItemsBody" class="line-items-body"><!-- JS --></div>
+                    </div>
+                  </section>
+
+                  <section class="wo-section">
+                    <div class="wo-section-header">
+                      <h4>Service Checklist</h4>
+                      <select id="woTemplateSelect" class="input input-select">
+                        <option value="">Apply template…</option>
+                      </select>
+                    </div>
+                    <ul id="woChecklist" class="checklist"><!-- JS --></ul>
+                  </section>
+
+                  <section class="wo-section wo-notes-section">
+                    <div class="wo-section-header">
+                      <h4>Notes</h4>
+                    </div>
+                    <textarea
+                      id="woNotes"
+                      class="input input-multiline"
+                      rows="3"
+                      placeholder="Technician notes, diagnostics, torque specs, torque patterns…"
+                    ></textarea>
+                  </section>
+
+                  <section class="wo-section wo-totals">
+                    <div class="totals-row">
+                      <span>Labor</span>
+                      <span id="woLaborTotal">$0.00</span>
+                    </div>
+                    <div class="totals-row">
+                      <span>Parts</span>
+                      <span id="woPartsTotal">$0.00</span>
+                    </div>
+                    <div class="totals-row totals-row--grand">
+                      <span>Total</span>
+                      <span id="woGrandTotal">$0.00</span>
+                    </div>
+                  </section>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <!-- PANEL: Mileage -->
+          <section
+            id="mileagePanel"
+            class="panel"
+            aria-labelledby="mileageHeading"
+          >
+            <header class="panel-header">
+              <div>
+                <h2 id="mileageHeading">Mileage</h2>
+                <p class="panel-subtitle">
+                  Log odometer readings and see how units are trending.
+                </p>
+              </div>
+              <div class="panel-actions">
+                <button class="btn btn-primary" id="addMileageEntryBtn">Log Reading</button>
+              </div>
+            </header>
+
+            <div class="panel-body">
+              <div class="mileage-layout">
+                <div class="card card--surface">
+                  <h3>Quick Log</h3>
+                  <form id="mileageForm" class="form-grid" autocomplete="off">
+                    <div class="field-group">
+                      <label for="mileageVehicle" class="field-label">Unit</label>
+                      <select id="mileageVehicle" class="input input-select"></select>
+                    </div>
+                    <div class="field-group">
+                      <label for="mileageValue" class="field-label">Odometer</label>
+                      <input
+                        id="mileageValue"
+                        type="number"
+                        class="input"
+                        min="0"
+                        step="1"
+                        required
+                      />
+                    </div>
+                    <div class="field-group">
+                      <label for="mileageDate" class="field-label">Date</label>
+                      <input id="mileageDate" type="date" class="input" required />
+                    </div>
+                    <div class="field-group field-group--full">
+                      <button type="submit" class="btn btn-primary btn-block">
+                        Save Reading
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <div class="card card--surface">
+                  <div class="card-header-inline">
+                    <h3>Recent Mileage</h3>
+                    <span class="pill pill-muted" id="mileageUnitLabel">Select a unit</span>
+                  </div>
+                  <div id="mileageHistory" class="timeline"><!-- JS --></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- PANEL: Service Templates -->
+          <section
+            id="templatesPanel"
+            class="panel"
+            aria-labelledby="templatesHeading"
+          >
+            <header class="panel-header">
+              <div>
+                <h2 id="templatesHeading">Service Templates</h2>
+                <p class="panel-subtitle">
+                  Standardize inspections and interval services with reusable checklists.
+                </p>
+              </div>
+              <div class="panel-actions">
+                <button class="btn btn-primary" id="addTemplateBtn">New Template</button>
+              </div>
+            </header>
+
+            <div class="panel-body panel-split">
+              <div class="panel-column panel-column--list">
+                <div id="templateList" class="template-list" aria-live="polite">
+                  <!-- JS cards -->
+                </div>
+              </div>
+
+              <aside class="panel-column panel-column--detail" aria-label="Template detail">
+                <div id="templateEmptyState" class="empty-state">
+                  <h3>Select a template</h3>
+                  <p>Define step-by-step procedures that technicians can tick off in the shop.</p>
+                </div>
+
+                <div id="templateDetail" class="template-detail hidden">
+                  <header class="template-header">
+                    <div>
+                      <h3 id="templateDetailName">PM Service</h3>
+                      <p id="templateDetailMeta" class="wo-meta">Applies to trucks</p>
+                    </div>
+                    <div class="template-header-actions">
+                      <button class="btn btn-ghost" id="templateDuplicateBtn">Duplicate</button>
+                      <button class="btn btn-outline" id="templateDeleteBtn">Delete</button>
+                    </div>
+                  </header>
+
+                  <section class="wo-section">
+                    <h4>Steps</h4>
+                    <ul id="templateSteps" class="checklist checklist-editable"><!-- JS --></ul>
+                    <button class="btn btn-ghost-sm" id="addTemplateStepBtn">Add Step</button>
+                  </section>
+
+                  <section class="wo-section wo-notes-section">
+                    <h4>Template Notes</h4>
+                    <textarea
+                      id="templateNotes"
+                      class="input input-multiline"
+                      rows="3"
+                      placeholder="Requirements, torque values, safety notes…"
+                    ></textarea>
+                  </section>
+                </div>
+              </aside>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <!-- SECTION: Modals -->
+      <div id="modalBackdrop" class="modal-backdrop hidden" aria-hidden="true"></div>
+
+      <!-- Vehicle Modal -->
+      <div
+        id="vehicleModal"
+        class="modal hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="vehicleModalTitle"
+      >
+        <div class="modal-content card card--surface">
+          <header class="modal-header">
+            <h2 id="vehicleModalTitle">Add Unit</h2>
+            <button class="icon-button" data-modal-close>
+              <span aria-hidden="true">×</span>
+              <span class="sr-only">Close</span>
+            </button>
+          </header>
+          <form id="vehicleForm" class="form-grid" autocomplete="off">
+            <div class="field-group">
+              <label for="vehicleType" class="field-label">Type</label>
+              <select id="vehicleType" class="input input-select" required>
+                <option value="truck">Truck</option>
+                <option value="trailer">Trailer</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="vehicleUnit" class="field-label">Unit #</label>
+              <input id="vehicleUnit" class="input" required />
+            </div>
+            <div class="field-group">
+              <label for="vehiclePlate" class="field-label">Plate</label>
+              <input id="vehiclePlate" class="input" />
+            </div>
+            <div class="field-group">
+              <label for="vehicleVin" class="field-label">VIN</label>
+              <input id="vehicleVin" class="input" />
+            </div>
+            <div class="field-group">
+              <label for="vehicleMileage" class="field-label">Current Mileage</label>
+              <input
+                id="vehicleMileage"
+                type="number"
+                class="input"
+                min="0"
+                step="1"
+              />
+            </div>
+            <div class="field-group field-group--full">
+              <label for="vehicleNotes" class="field-label">Notes</label>
+              <textarea
+                id="vehicleNotes"
+                class="input input-multiline"
+                rows="2"
+                placeholder="Usage, special equipment, tire size…"
+              ></textarea>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Unit</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Work Order Modal (create / edit header) -->
+      <div
+        id="workOrderModal"
+        class="modal hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="workOrderModalTitle"
+      >
+        <div class="modal-content card card--surface">
+          <header class="modal-header">
+            <h2 id="workOrderModalTitle">New Work Order</h2>
+            <button class="icon-button" data-modal-close>
+              <span aria-hidden="true">×</span>
+              <span class="sr-only">Close</span>
+            </button>
+          </header>
+          <form id="workOrderForm" class="form-grid" autocomplete="off">
+            <div class="field-group">
+              <label for="woVehicle" class="field-label">Unit</label>
+              <select id="woVehicle" class="input input-select" required></select>
+            </div>
+            <div class="field-group">
+              <label for="woType" class="field-label">Work Type</label>
+              <input
+                id="woType"
+                class="input"
+                placeholder="PM Service, Repair, Inspection…"
+                required
+              />
+            </div>
+            <div class="field-group">
+              <label for="woOpened" class="field-label">Opened</label>
+              <input id="woOpened" type="date" class="input" required />
+            </div>
+            <div class="field-group">
+              <label for="woMileage" class="field-label">Mileage</label>
+              <input
+                id="woMileage"
+                type="number"
+                class="input"
+                min="0"
+                step="1"
+              />
+            </div>
+            <div class="field-group field-group--full">
+              <label for="woSummary" class="field-label">Summary</label>
+              <input
+                id="woSummary"
+                class="input"
+                placeholder="Short description visible in list view"
+              />
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+              <button type="submit" class="btn btn-primary">Create Work Order</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Template Modal (create / edit header) -->
+      <div
+        id="templateModal"
+        class="modal hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="templateModalTitle"
+      >
+        <div class="modal-content card card--surface">
+          <header class="modal-header">
+            <h2 id="templateModalTitle">New Template</h2>
+            <button class="icon-button" data-modal-close>
+              <span aria-hidden="true">×</span>
+              <span class="sr-only">Close</span>
+            </button>
+          </header>
+          <form id="templateForm" class="form-grid" autocomplete="off">
+            <div class="field-group field-group--full">
+              <label for="templateName" class="field-label">Template Name</label>
+              <input
+                id="templateName"
+                class="input"
+                placeholder="Truck A-Service, Trailer PMI, DOT Inspection…"
+                required
+              />
+            </div>
+            <div class="field-group">
+              <label for="templateAppliesTo" class="field-label">Applies To</label>
+              <select id="templateAppliesTo" class="input input-select">
+                <option value="any">Trucks & Trailers</option>
+                <option value="truck">Trucks only</option>
+                <option value="trailer">Trailers only</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="templateInterval" class="field-label">Interval (miles)</label>
+              <input
+                id="templateInterval"
+                type="number"
+                class="input"
+                min="0"
+                step="500"
+              />
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+              <button type="submit" class="btn btn-primary">Create Template</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
